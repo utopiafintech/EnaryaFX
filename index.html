@@ -9,7 +9,7 @@
   <meta property="og:description" content="Clear currency insight, every day." />
   <meta property="og:type" content="website" />
   <!-- Favicon placeholder: replace with your own file (e.g. favicon.png) -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2314B8A6'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='%230B1220' font-family='Arial' font-weight='700'>E</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23830c4f'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='%23ffffff' font-family='Arial' font-weight='700'>E</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -17,15 +17,16 @@
   <style>
     /* ---------- Theme ---------- */
     :root {
-      --bg: #0B1220;
-      --bg-soft: #111A2E;
-      --card: #141F36;
-      --border: #22304D;
+      --bg: #12060E;
+      --bg-soft: #1B0A15;
+      --card: #240E1C;
+      --border: #43203A;
       --text: #F1F5F9;
-      --muted: #94A3B8;
-      --accent: #14B8A6;
+      --muted: #BCA2B3;
+      --accent: #830c4f;      /* main brand color */
+      --accent-light: #E0529C; /* lighter tint for text/links on dark backgrounds */
       --up: #22C55E;
-      --down: #EF4444;
+      --down: #FF5C5C;
       --ticker-h: 44px;
       --nav-h: 64px;
     }
@@ -37,7 +38,7 @@
       padding-top: var(--ticker-h);
     }
     a { color: inherit; text-decoration: none; }
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    :focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; border-radius: 4px; }
     .container { width: min(1120px, 92%); margin-inline: auto; }
     section { padding: 72px 0; }
     h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 8px; }
@@ -47,7 +48,7 @@
     /* ---------- Moving ticker bar ---------- */
     .ticker {
       position: fixed; top: 0; left: 0; right: 0; height: var(--ticker-h); z-index: 100;
-      background: #060B16; border-bottom: 1px solid var(--border); overflow: hidden;
+      background: #0A0308; border-bottom: 1px solid var(--border); overflow: hidden;
       display: flex; align-items: center;
     }
     .ticker-track {
@@ -73,30 +74,30 @@
     /* ---------- Navbar ---------- */
     .nav {
       position: sticky; top: var(--ticker-h); z-index: 90; height: var(--nav-h);
-      background: rgba(11,18,32,.92); backdrop-filter: blur(8px);
+      background: rgba(18,6,14,.92); backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
     }
     .nav .container { height: 100%; display: flex; align-items: center; justify-content: space-between; }
     .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; }
     .logo-mark {
-      width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: var(--bg);
+      width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: #fff;
       display: grid; place-items: center; font-weight: 800;
     }
-    .logo span.fx { color: var(--accent); }
+    .logo span.fx { color: var(--accent-light); }
     .nav ul { display: flex; gap: 28px; list-style: none; }
     .nav ul a { color: var(--muted); font-weight: 500; transition: color .2s; }
     .nav ul a:hover { color: var(--text); }
     @media (max-width: 560px) { .nav ul { gap: 16px; font-size: .9rem; } }
 
     /* ---------- Hero ---------- */
-    .hero { padding-top: 80px; background: radial-gradient(900px 400px at 80% -10%, rgba(20,184,166,.18), transparent 60%); }
+    .hero { padding-top: 80px; background: radial-gradient(900px 400px at 80% -10%, rgba(131,12,79,.40), transparent 60%); }
     .hero .container { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
     .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; margin-bottom: 16px; }
-    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero h1 em { font-style: normal; color: var(--accent-light); }
     .hero p { color: var(--muted); font-size: 1.1rem; max-width: 520px; }
     .btn {
       display: inline-block; margin-top: 24px; padding: 12px 22px; border-radius: 10px;
-      background: var(--accent); color: var(--bg); font-weight: 700; border: 0; cursor: pointer;
+      background: var(--accent); color: #fff; font-weight: 700; border: 0; cursor: pointer;
     }
     .btn:hover { filter: brightness(1.1); }
     @media (max-width: 860px) { .hero .container { grid-template-columns: 1fr; } }
@@ -111,7 +112,7 @@
       background: var(--bg-soft); color: var(--text); font: inherit;
     }
     .result { margin-top: 8px; padding: 16px; border-radius: 12px; background: var(--bg-soft); }
-    .result .big { font-size: 1.6rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .result .big { font-size: 1.6rem; font-weight: 800; color: var(--accent-light); font-variant-numeric: tabular-nums; }
     .result .small { color: var(--muted); font-size: .85rem; }
 
     /* ---------- Rates table ---------- */
@@ -127,11 +128,11 @@
     /* ---------- Learn cards ---------- */
     .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: transform .2s, border-color .2s; }
-    .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .card:hover { transform: translateY(-3px); border-color: var(--accent-light); }
     .card .ico { font-size: 1.6rem; margin-bottom: 10px; }
     .card h3 { margin-bottom: 8px; font-size: 1.1rem; }
     .card p { color: var(--muted); font-size: .95rem; }
-    .card .tag { display: inline-block; font-size: .75rem; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
+    .card .tag { display: inline-block; font-size: .75rem; color: var(--accent-light); margin-bottom: 8px; font-weight: 600; }
 
     /* ---------- Sessions ---------- */
     .session { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -142,13 +143,13 @@
     .session p { margin-top: 4px; font-size: .85rem; }
 
     /* ---------- Footer ---------- */
-    footer { border-top: 1px solid var(--border); padding: 48px 0 32px; background: #080E1B; }
+    footer { border-top: 1px solid var(--border); padding: 48px 0 32px; background: #0C040A; }
     .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
     .foot ul { list-style: none; display: flex; gap: 20px; flex-wrap: wrap; color: var(--muted); }
     .foot ul a:hover { color: var(--text); }
     .social { display: flex; gap: 12px; }
     .social a { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); }
-    .social a:hover { color: var(--accent); border-color: var(--accent); }
+    .social a:hover { color: var(--accent-light); border-color: var(--accent-light); }
     .social svg { width: 16px; height: 16px; fill: currentColor; }
     .disclaimer { color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); padding-top: 20px; }
   </style>
@@ -433,7 +434,7 @@
     { city: 'London',   open: 8,  close: 17 },
     { city: 'New York', open: 13, close: 22 },
     // Shashego local market, Ethiopia (UTC+3). Assumed 08:00-17:00 local = 05:00-14:00 UTC. Edit to match real trading hours.
-    { city: 'Shashego Market', open: 5, close: 14, note: 'Ethiopia' },
+    { city: 'Shashego Market', open: 5, close: 14 },
   ];
   function isOpen(s, h) { return s.open < s.close ? (h >= s.open && h < s.close) : (h >= s.open || h < s.close); }
   function localHour(utcHour) {
