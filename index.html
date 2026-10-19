@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Enarya FX | Clear currency insight, every day</title>
+  <meta name="description" content="Enarya FX: live forex rates, a currency converter, market sessions and beginner-friendly forex education." />
+  <meta property="og:title" content="Enarya FX" />
+  <meta property="og:description" content="Clear currency insight, every day." />
+  <meta property="og:type" content="website" />
+  <!-- Favicon placeholder: replace with your own file (e.g. favicon.png) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2314B8A6'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='%230B1220' font-family='Arial' font-weight='700'>E</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ---------- Theme ---------- */
+    :root {
+      --bg: #0B1220;
+      --bg-soft: #111A2E;
+      --card: #141F36;
+      --border: #22304D;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --accent: #14B8A6;
+      --up: #22C55E;
+      --down: #EF4444;
+      --ticker-h: 44px;
+      --nav-h: 64px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--ticker-h) + var(--nav-h) + 8px); }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+      padding-top: var(--ticker-h);
+    }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    .container { width: min(1120px, 92%); margin-inline: auto; }
+    section { padding: 72px 0; }
+    h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 8px; }
+    .section-sub { color: var(--muted); margin-bottom: 32px; max-width: 640px; }
+    .up { color: var(--up); } .down { color: var(--down); }
+
+    /* ---------- Moving ticker bar ---------- */
+    .ticker {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--ticker-h); z-index: 100;
+      background: #060B16; border-bottom: 1px solid var(--border); overflow: hidden;
+      display: flex; align-items: center;
+    }
+    .ticker-track {
+      display: flex; width: max-content;
+      animation: scroll 45s linear infinite;
+    }
+    .ticker:hover .ticker-track { animation-play-state: paused; }
+    .ticker-group { display: flex; flex-shrink: 0; }
+    .tick {
+      display: flex; align-items: center; gap: 8px; padding: 0 22px;
+      font-size: .85rem; white-space: nowrap; border-right: 1px solid var(--border);
+    }
+    .tick .pair { font-weight: 700; }
+    .tick .rate { font-variant-numeric: tabular-nums; color: var(--muted); }
+    .tick .chg { font-variant-numeric: tabular-nums; font-weight: 600; }
+    @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @media (prefers-reduced-motion: reduce) {
+      .ticker-track { animation: none; }
+      .ticker { overflow-x: auto; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* ---------- Navbar ---------- */
+    .nav {
+      position: sticky; top: var(--ticker-h); z-index: 90; height: var(--nav-h);
+      background: rgba(11,18,32,.92); backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav .container { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: var(--bg);
+      display: grid; place-items: center; font-weight: 800;
+    }
+    .logo span.fx { color: var(--accent); }
+    .nav ul { display: flex; gap: 28px; list-style: none; }
+    .nav ul a { color: var(--muted); font-weight: 500; transition: color .2s; }
+    .nav ul a:hover { color: var(--text); }
+    @media (max-width: 560px) { .nav ul { gap: 16px; font-size: .9rem; } }
+
+    /* ---------- Hero ---------- */
+    .hero { padding-top: 80px; background: radial-gradient(900px 400px at 80% -10%, rgba(20,184,166,.18), transparent 60%); }
+    .hero .container { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; margin-bottom: 16px; }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p { color: var(--muted); font-size: 1.1rem; max-width: 520px; }
+    .btn {
+      display: inline-block; margin-top: 24px; padding: 12px 22px; border-radius: 10px;
+      background: var(--accent); color: var(--bg); font-weight: 700; border: 0; cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    @media (max-width: 860px) { .hero .container { grid-template-columns: 1fr; } }
+
+    .converter { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .converter h3 { margin-bottom: 16px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input, select {
+      width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-soft); color: var(--text); font: inherit;
+    }
+    .result { margin-top: 8px; padding: 16px; border-radius: 12px; background: var(--bg-soft); }
+    .result .big { font-size: 1.6rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .result .small { color: var(--muted); font-size: .85rem; }
+
+    /* ---------- Rates table ---------- */
+    .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
+    table { width: 100%; border-collapse: collapse; min-width: 520px; }
+    th, td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    tr:last-child td { border-bottom: 0; }
+    td.num { font-variant-numeric: tabular-nums; }
+    .status { margin-top: 12px; color: var(--muted); font-size: .85rem; }
+    svg.spark { width: 100px; height: 28px; display: block; }
+
+    /* ---------- Learn cards ---------- */
+    .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: transform .2s, border-color .2s; }
+    .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .card .ico { font-size: 1.6rem; margin-bottom: 10px; }
+    .card h3 { margin-bottom: 8px; font-size: 1.1rem; }
+    .card p { color: var(--muted); font-size: .95rem; }
+    .card .tag { display: inline-block; font-size: .75rem; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
+
+    /* ---------- Sessions ---------- */
+    .session { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .session .badge { padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; background: var(--bg-soft); color: var(--muted); }
+    .session.open { border-color: var(--up); }
+    .session.open .badge { background: rgba(34,197,94,.15); color: var(--up); }
+    .session h3 { margin: 0; }
+    .session p { margin-top: 4px; font-size: .85rem; }
+
+    /* ---------- Footer ---------- */
+    footer { border-top: 1px solid var(--border); padding: 48px 0 32px; background: #080E1B; }
+    .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+    .foot ul { list-style: none; display: flex; gap: 20px; flex-wrap: wrap; color: var(--muted); }
+    .foot ul a:hover { color: var(--text); }
+    .social { display: flex; gap: 12px; }
+    .social a { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); }
+    .social a:hover { color: var(--accent); border-color: var(--accent); }
+    .social svg { width: 16px; height: 16px; fill: currentColor; }
+    .disclaimer { color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); padding-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- ========== TOP MOVING BAR ========== -->
+  <div class="ticker" role="region" aria-label="Live forex rates ticker">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <!-- ========== NAVBAR ========== -->
+  <header class="nav">
+    <div class="container">
+      <a href="#top" class="logo" aria-label="Enarya FX home">
+        <div class="logo-mark">E</div><div>Enarya <span class="fx">FX</span></div>
+      </a>
+      <nav aria-label="Main">
+        <ul>
+          <li><a href="#rates">Rates</a></li>
+          <li><a href="#learn">Learn</a></li>
+          <li><a href="#news">News</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ========== HERO + CONVERTER ========== -->
+    <section class="hero">
+      <div class="container">
+        <div>
+          <h1>Clear currency insight, <em>every day.</em></h1>
+          <p>Live exchange rates, easy-to-read market data and beginner-friendly forex education, all in one place.</p>
+          <a href="#rates" class="btn">View live rates</a>
+        </div>
+
+        <div class="converter" aria-labelledby="convTitle">
+          <h3 id="convTitle">Currency converter</h3>
+          <div class="field">
+            <label for="amount">Amount</label>
+            <input id="amount" type="number" min="0" step="any" value="100" inputmode="decimal" />
+          </div>
+          <div class="row">
+            <div class="field"><label for="from">From</label><select id="from"></select></div>
+            <div class="field"><label for="to">To</label><select id="to"></select></div>
+          </div>
+          <div class="result" aria-live="polite">
+            <div class="big" id="convResult">–</div>
+            <div class="small" id="convRate">Loading rates…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== LIVE RATES ========== -->
+    <section id="rates">
+      <div class="container">
+        <h2>Live rates</h2>
+        <p class="section-sub">Major currency pairs with daily change and a 2-week trend.</p>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only" style="position:absolute;left:-9999px">Major forex pair rates</caption>
+            <thead><tr><th>Pair</th><th>Rate</th><th>Daily change</th><th>14-day trend</th></tr></thead>
+            <tbody id="ratesBody"></tbody>
+          </table>
+        </div>
+        <p class="status" id="status">Loading…</p>
+      </div>
+    </section>
+
+    <!-- ========== LEARN ========== -->
+    <section id="learn" style="background:var(--bg-soft)">
+      <div class="container">
+        <h2>Learn forex</h2>
+        <p class="section-sub">Six essentials to get you started.</p>
+        <div class="grid" id="learnGrid"></div>
+      </div>
+    </section>
+
+    <!-- ========== MARKET SESSIONS ========== -->
+    <section id="sessions">
+      <div class="container">
+        <h2>Market sessions</h2>
+        <p class="section-sub">Open sessions are highlighted. Times are shown in your local time zone.</p>
+        <div class="grid" id="sessionGrid"></div>
+      </div>
+    </section>
+
+    <!-- ========== NEWS ========== -->
+    <section id="news" style="background:var(--bg-soft)">
+      <div class="container">
+        <h2>Market news</h2>
+        <p class="section-sub">Placeholder headlines. Plug in a news API in <code>fetchNews()</code>.</p>
+        <div class="grid" id="newsGrid"></div>
+      </div>
+    </section>
+
+    <!-- ========== ABOUT ========== -->
+    <section id="about">
+      <div class="container">
+        <h2>About Enarya FX</h2>
+        <p class="section-sub">Enarya FX is an independent information site that makes currency markets easier to understand. We share rates, education and market context so you can learn at your own pace.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer>
+    <div class="container">
+      <div class="foot">
+        <div class="logo"><div class="logo-mark">E</div><div>Enarya <span class="fx">FX</span></div></div>
+        <ul>
+          <li><a href="#rates">Rates</a></li>
+          <li><a href="#learn">Learn</a></li>
+          <li><a href="#news">News</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+        <div class="social">
+          <a href="#" aria-label="X (Twitter)"><svg viewBox="0 0 24 24"><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.2 22H2l7.7-8.8L1.5 2h6.8l4.7 6.2L18.9 2zm-1.2 18h1.8L7.4 3.9H5.5L17.7 20z"/></svg></a>
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0 8.2a3.2 3.2 0 110-6.4 3.2 3.2 0 010 6.4zM17.3 6.2a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zM12 2.2c3.2 0 3.6 0 4.8.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8C2.4 3.9 4 2.4 7.2 2.3 8.4 2.2 8.8 2.2 12 2.2z" fill-rule="evenodd" clip-rule="evenodd"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7.2a3 3 0 00-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 001 7.2 31 31 0 00.5 12 31 31 0 001 16.8a3 3 0 002.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 002.1-2.1c.4-1.6.5-3.2.5-4.8s-.1-3.2-.5-4.8zM9.8 15.1V8.9l5.4 3.1-5.4 3.1z"/></svg></a>
+        </div>
+      </div>
+      <p class="disclaimer">Enarya FX provides information for educational purposes only and is not financial advice. Forex trading carries a high level of risk.</p>
+    </div>
+  </footer>
+
+  <script>
+  /* =====================================================================
+     ENARYA FX  |  main script
+     ===================================================================== */
+
+  /* ---------- Config ---------- */
+  const REFRESH_MS = 60 * 1000;                 // refresh rates every 60 seconds
+  const CURRENCIES = ['USD','EUR','GBP','JPY','CHF','AUD','CAD','NZD'];
+
+  // Each pair is defined from USD-based rates `r` (r.EUR = how many EUR per 1 USD).
+  const PAIRS = [
+    { name: 'EUR/USD', calc: r => 1 / r.EUR,        dp: 5 },
+    { name: 'GBP/USD', calc: r => 1 / r.GBP,        dp: 5 },
+    { name: 'USD/JPY', calc: r => r.JPY,            dp: 3 },
+    { name: 'USD/CHF', calc: r => r.CHF,            dp: 5 },
+    { name: 'AUD/USD', calc: r => 1 / r.AUD,        dp: 5 },
+    { name: 'USD/CAD', calc: r => r.CAD,            dp: 5 },
+    { name: 'NZD/USD', calc: r => 1 / r.NZD,        dp: 5 },
+    { name: 'EUR/GBP', calc: r => r.GBP / r.EUR,    dp: 5 },
+    { name: 'EUR/JPY', calc: r => r.JPY / r.EUR,    dp: 3 },
+    { name: 'GBP/JPY', calc: r => r.JPY / r.GBP,    dp: 3 },
+  ];
+
+  /* ---------- Sample fallback data (used if the API fails) ---------- */
+  function sampleSeries() {
+    const base = { USD:1, EUR:0.92, GBP:0.77, JPY:150.0, CHF:0.88, AUD:1.55, CAD:1.37, NZD:1.69 };
+    const days = [];
+    for (let i = 0; i < 14; i++) {
+      const wobble = k => base[k] * (1 + Math.sin(i / 2 + k.length) * 0.004);
+      const day = {};
+      CURRENCIES.forEach(k => day[k] = k === 'USD' ? 1 : wobble(k));
+      days.push(day);
+    }
+    return days;
+  }
+
+  /* =====================================================================
+     DATA PROVIDER  |  swap this ONE function to change provider / add a key.
+     Must return an array of daily objects (oldest -> newest), each shaped
+     like { USD: 1, EUR: 0.92, GBP: 0.77, ... } (units per 1 USD).
+     Provider used: Frankfurter (free, no key, ECB reference rates, daily).
+     ===================================================================== */
+  async function fetchRates() {
+    const API_KEY = '';  // <- add a key here if your provider needs one
+    const start = new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10);
+    const symbols = CURRENCIES.filter(c => c !== 'USD').join(',');
+    const url = `https://api.frankfurter.dev/v1/${start}..?base=USD&symbols=${symbols}`;
+    const res = await fetch(url /*, { headers: { Authorization: API_KEY } } */);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const json = await res.json();
+    const days = Object.keys(json.rates).sort().map(d => ({ USD: 1, ...json.rates[d] }));
+    if (days.length < 2) throw new Error('Not enough data');
+    return days.slice(-14);
+  }
+
+  /* ---------- State ---------- */
+  let series = sampleSeries();
+  let live = false;
+
+  /* ---------- Helpers ---------- */
+  const fmt = (n, dp) => n.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
+
+  function pairStats(p) {
+    const values = series.map(p.calc);
+    const last = values[values.length - 1];
+    const prev = values[values.length - 2];
+    return { values, last, pct: ((last - prev) / prev) * 100 };
+  }
+
+  function sparkline(values, up) {
+    const w = 100, h = 28;
+    const min = Math.min(...values), max = Math.max(...values);
+    const span = max - min || 1;
+    const pts = values.map((v, i) => `${(i / (values.length - 1) * w).toFixed(1)},${(h - 3 - ((v - min) / span) * (h - 6)).toFixed(1)}`).join(' ');
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline fill="none" stroke="${up ? 'var(--up)' : 'var(--down)'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/></svg>`;
+  }
+
+  /* ---------- Render: ticker ---------- */
+  function renderTicker() {
+    const items = PAIRS.map(p => {
+      const s = pairStats(p), up = s.pct >= 0;
+      return `<div class="tick"><span class="pair">${p.name}</span><span class="rate">${fmt(s.last, p.dp)}</span>` +
+             `<span class="chg ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(s.pct).toFixed(2)}%</span></div>`;
+    }).join('');
+    // Content is duplicated so translateX(-50%) loops seamlessly
+    const group = `<div class="ticker-group">${items}</div>`;
+    document.getElementById('tickerTrack').innerHTML = group + group;
+  }
+
+  /* ---------- Render: rates table ---------- */
+  function renderTable() {
+    document.getElementById('ratesBody').innerHTML = PAIRS.map(p => {
+      const s = pairStats(p), up = s.pct >= 0;
+      return `<tr><td><strong>${p.name}</strong></td><td class="num">${fmt(s.last, p.dp)}</td>` +
+             `<td class="num ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(s.pct).toFixed(2)}%</td>` +
+             `<td>${sparkline(s.values, up)}</td></tr>`;
+    }).join('');
+    document.getElementById('status').textContent = live
+      ? 'Rates: ECB reference data via Frankfurter. Updated ' + new Date().toLocaleTimeString() + '. Reference rates update once per business day.'
+      : 'Live data unavailable, showing sample data.';
+  }
+
+  /* ---------- Converter ---------- */
+  function setupConverter() {
+    const from = document.getElementById('from'), to = document.getElementById('to');
+    const opts = CURRENCIES.map(c => `<option value="${c}">${c}</option>`).join('');
+    from.innerHTML = opts; to.innerHTML = opts;
+    from.value = 'USD'; to.value = 'EUR';
+    ['input', 'change'].forEach(ev => {
+      document.getElementById('amount').addEventListener(ev, updateConverter);
+      from.addEventListener(ev, updateConverter);
+      to.addEventListener(ev, updateConverter);
+    });
+  }
+  function updateConverter() {
+    const amt = parseFloat(document.getElementById('amount').value) || 0;
+    const f = document.getElementById('from').value, t = document.getElementById('to').value;
+    const r = series[series.length - 1];
+    const rate = r[t] / r[f];
+    document.getElementById('convResult').textContent = `${fmt(amt * rate, 2)} ${t}`;
+    document.getElementById('convRate').textContent = `1 ${f} = ${fmt(rate, 4)} ${t}`;
+  }
+
+  /* ---------- Learn cards ---------- */
+  const LEARN = [
+    { ico: '🌍', title: 'What is forex?', text: 'The foreign exchange market is where currencies are traded. It is the largest financial market in the world and runs 24 hours a day on weekdays.' },
+    { ico: '📏', title: 'Pips and lots', text: 'A pip is the smallest standard price move (usually 0.0001). A standard lot is 100,000 units of the base currency; mini and micro lots are smaller.' },
+    { ico: '💱', title: 'Reading a quote', text: 'In EUR/USD = 1.0800, EUR is the base and USD the quote currency: 1 euro costs 1.08 US dollars.' },
+    { ico: '⭐', title: 'Major vs. minor pairs', text: 'Majors all include the US dollar (EUR/USD, USD/JPY…). Minors, or crosses, pair other major currencies such as EUR/GBP.' },
+    { ico: '⚠️', title: 'Leverage and risk', text: 'Leverage lets you control a large position with a small deposit, but it magnifies losses as well as gains. Manage risk carefully.' },
+    { ico: '🕒', title: 'Trading sessions', text: 'Sydney, Tokyo, London and New York sessions overlap through the day. Liquidity and volatility are usually highest during overlaps.' },
+  ];
+  function renderLearn() {
+    document.getElementById('learnGrid').innerHTML = LEARN.map(c =>
+      `<article class="card"><div class="ico" aria-hidden="true">${c.ico}</div><h3>${c.title}</h3><p>${c.text}</p></article>`).join('');
+  }
+
+  /* ---------- Market sessions (hours in UTC, approximate, standard time) ---------- */
+  const SESSIONS = [
+    { city: 'Sydney',   open: 22, close: 7  },
+    { city: 'Tokyo',    open: 0,  close: 9  },
+    { city: 'London',   open: 8,  close: 17 },
+    { city: 'New York', open: 13, close: 22 },
+  ];
+  function isOpen(s, h) { return s.open < s.close ? (h >= s.open && h < s.close) : (h >= s.open || h < s.close); }
+  function localHour(utcHour) {
+    const d = new Date(); d.setUTCHours(utcHour, 0, 0, 0);
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  function renderSessions() {
+    const now = new Date().getUTCHours();
+    document.getElementById('sessionGrid').innerHTML = SESSIONS.map(s => {
+      const open = isOpen(s, now);
+      return `<article class="card session ${open ? 'open' : ''}"><div><h3>${s.city}</h3>` +
+             `<p style="color:var(--muted)">${localHour(s.open)} – ${localHour(s.close)} (your time)</p></div>` +
+             `<span class="badge">${open ? 'OPEN' : 'CLOSED'}</span></article>`;
+    }).join('');
+  }
+
+  /* ---------- News (placeholder. Swap fetchNews() for a real API) ---------- */
+  async function fetchNews() {
+    // Example: const res = await fetch('https://YOUR-NEWS-API?key=...'); return (await res.json()).articles;
+    return [
+      { tag: 'Central Banks', title: 'Placeholder: Central bank policy update', text: 'Your headline summary will appear here once a news API is connected.', url: '#' },
+      { tag: 'EUR/USD',       title: 'Placeholder: Euro reacts to economic data', text: 'Your headline summary will appear here once a news API is connected.', url: '#' },
+      { tag: 'Markets',       title: 'Placeholder: Weekly market outlook', text: 'Your headline summary will appear here once a news API is connected.', url: '#' },
+    ];
+  }
+  async function renderNews() {
+    const items = await fetchNews();
+    document.getElementById('newsGrid').innerHTML = items.map(n =>
+      `<article class="card"><span class="tag">${n.tag}</span><h3><a href="${n.url}">${n.title}</a></h3><p>${n.text}</p></article>`).join('');
+  }
+
+  /* ---------- Refresh loop ---------- */
+  async function refresh() {
+    try { series = await fetchRates(); live = true; }
+    catch (err) { console.warn('Rates fetch failed, using fallback:', err); if (!live) series = sampleSeries(); }
+    renderTicker(); renderTable(); updateConverter();
+  }
+
+  /* ---------- Init ---------- */
+  setupConverter();
+  renderLearn();
+  renderSessions();
+  renderNews();
+  renderTicker(); renderTable(); updateConverter();   // show sample data instantly
+  refresh();                                           // then load live data
+  setInterval(refresh, REFRESH_MS);
+  setInterval(renderSessions, 60 * 1000);
+  </script>
+</body>
+</html>
