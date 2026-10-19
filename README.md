@@ -30,8 +30,10 @@ python3 -m http.server 8000
 
 ## Notes
 
-- The default provider (Frankfurter) serves ECB reference rates, which update once per business day. For tick-by-tick prices, use a paid provider.
+- The default provider (Frankfurter v2) serves daily reference rates, including ETB, which update once per business day. For tick-by-tick prices, use a paid provider.
 - Market session hours are approximate and do not adjust for daylight saving time.
+- The Shashego Market session (Ethiopia) assumes 08:00-17:00 local time (UTC+3). Edit the `SESSIONS` array in `index.html` to match its real hours.
+- ETB/USD is shown as the value of one birr in US dollars.
 
 ## Disclaimer
 

@@ -209,7 +209,7 @@
     <section id="rates">
       <div class="container">
         <h2>Live rates</h2>
-        <p class="section-sub">Major currency pairs with daily change and a 2-week trend.</p>
+        <p class="section-sub">Major currency pairs plus ETB/USD, with daily change and a 2-week trend.</p>
         <div class="table-wrap">
           <table>
             <caption class="sr-only" style="position:absolute;left:-9999px">Major forex pair rates</caption>
@@ -285,7 +285,7 @@
 
   /* ---------- Config ---------- */
   const REFRESH_MS = 60 * 1000;                 // refresh rates every 60 seconds
-  const CURRENCIES = ['USD','EUR','GBP','JPY','CHF','AUD','CAD','NZD'];
+  const CURRENCIES = ['USD','EUR','GBP','JPY','CHF','AUD','CAD','NZD','ETB'];
 
   // Each pair is defined from USD-based rates `r` (r.EUR = how many EUR per 1 USD).
   const PAIRS = [
@@ -299,11 +299,12 @@
     { name: 'EUR/GBP', calc: r => r.GBP / r.EUR,    dp: 5 },
     { name: 'EUR/JPY', calc: r => r.JPY / r.EUR,    dp: 3 },
     { name: 'GBP/JPY', calc: r => r.JPY / r.GBP,    dp: 3 },
+    { name: 'ETB/USD', calc: r => 1 / r.ETB,        dp: 6 },   // Ethiopian birr
   ];
 
   /* ---------- Sample fallback data (used if the API fails) ---------- */
   function sampleSeries() {
-    const base = { USD:1, EUR:0.92, GBP:0.77, JPY:150.0, CHF:0.88, AUD:1.55, CAD:1.37, NZD:1.69 };
+    const base = { USD:1, EUR:0.92, GBP:0.77, JPY:150.0, CHF:0.88, AUD:1.55, CAD:1.37, NZD:1.69, ETB:155.0 };
     const days = [];
     for (let i = 0; i < 14; i++) {
       const wobble = k => base[k] * (1 + Math.sin(i / 2 + k.length) * 0.004);
@@ -318,17 +319,27 @@
      DATA PROVIDER  |  swap this ONE function to change provider / add a key.
      Must return an array of daily objects (oldest -> newest), each shaped
      like { USD: 1, EUR: 0.92, GBP: 0.77, ... } (units per 1 USD).
-     Provider used: Frankfurter (free, no key, ECB reference rates, daily).
+     Provider used: Frankfurter v2 (free, no key, daily reference rates).
+     The v2 API returns flat rows like { date, base, quote, rate } (as a JSON
+     array or newline-delimited JSON), and it includes ETB.
      ===================================================================== */
   async function fetchRates() {
     const API_KEY = '';  // <- add a key here if your provider needs one
     const start = new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10);
-    const symbols = CURRENCIES.filter(c => c !== 'USD').join(',');
-    const url = `https://api.frankfurter.dev/v1/${start}..?base=USD&symbols=${symbols}`;
+    const quotes = CURRENCIES.filter(c => c !== 'USD').join(',');
+    const url = `https://api.frankfurter.dev/v2/rates?base=USD&quotes=${quotes}&from=${start}`;
     const res = await fetch(url /*, { headers: { Authorization: API_KEY } } */);
     if (!res.ok) throw new Error('API error ' + res.status);
-    const json = await res.json();
-    const days = Object.keys(json.rates).sort().map(d => ({ USD: 1, ...json.rates[d] }));
+    const text = await res.text();
+    // Accept either a JSON array or NDJSON (one JSON object per line)
+    const rows = text.trim().startsWith('[')
+      ? JSON.parse(text)
+      : text.split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
+    // Group rows by date -> { USD: 1, EUR: 0.86, ETB: 150, ... }
+    const byDate = {};
+    rows.forEach(r => { (byDate[r.date] = byDate[r.date] || { USD: 1 })[r.quote] = r.rate; });
+    // Keep only days that have every currency, oldest -> newest
+    const days = Object.keys(byDate).sort().map(d => byDate[d]).filter(d => CURRENCIES.every(c => d[c]));
     if (days.length < 2) throw new Error('Not enough data');
     return days.slice(-14);
   }
@@ -376,7 +387,7 @@
              `<td>${sparkline(s.values, up)}</td></tr>`;
     }).join('');
     document.getElementById('status').textContent = live
-      ? 'Rates: ECB reference data via Frankfurter. Updated ' + new Date().toLocaleTimeString() + '. Reference rates update once per business day.'
+      ? 'Rates: daily reference data via Frankfurter. Updated ' + new Date().toLocaleTimeString() + '. Reference rates update once per business day.'
       : 'Live data unavailable, showing sample data.';
   }
 
@@ -421,6 +432,8 @@
     { city: 'Tokyo',    open: 0,  close: 9  },
     { city: 'London',   open: 8,  close: 17 },
     { city: 'New York', open: 13, close: 22 },
+    // Shashego local market, Ethiopia (UTC+3). Assumed 08:00-17:00 local = 05:00-14:00 UTC. Edit to match real trading hours.
+    { city: 'Shashego Market', open: 5, close: 14, note: 'Ethiopia' },
   ];
   function isOpen(s, h) { return s.open < s.close ? (h >= s.open && h < s.close) : (h >= s.open || h < s.close); }
   function localHour(utcHour) {
@@ -431,7 +444,7 @@
     const now = new Date().getUTCHours();
     document.getElementById('sessionGrid').innerHTML = SESSIONS.map(s => {
       const open = isOpen(s, now);
-      return `<article class="card session ${open ? 'open' : ''}"><div><h3>${s.city}</h3>` +
+      return `<article class="card session ${open ? 'open' : ''}"><div><h3>${s.city}${s.note ? ` <small style="color:var(--muted);font-weight:500">(${s.note})</small>` : ''}</h3>` +
              `<p style="color:var(--muted)">${localHour(s.open)} – ${localHour(s.close)} (your time)</p></div>` +
              `<span class="badge">${open ? 'OPEN' : 'CLOSED'}</span></article>`;
     }).join('');
