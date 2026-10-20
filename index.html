@@ -434,7 +434,7 @@
     { city: 'London',   open: 8,  close: 17 },
     { city: 'New York', open: 13, close: 22 },
     // Shashego local market, Ethiopia (UTC+3). Assumed 08:00-17:00 local = 05:00-14:00 UTC. Edit to match real trading hours.
-    { city: 'Shashego Market', open: 5, close: 14 },
+    { city: 'Shashego', open: 5, close: 14 },
   ];
   function isOpen(s, h) { return s.open < s.close ? (h >= s.open && h < s.close) : (h >= s.open || h < s.close); }
   function localHour(utcHour) {
