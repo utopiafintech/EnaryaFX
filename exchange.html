@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Exchange (Demo) | Enarya FX</title>
+  <meta name="description" content="Enarya FX Live Exchange: a simulated order book and buy/sell ticket for learning how trading works. Demo data only." />
+  <meta property="og:title" content="Enarya FX Live Exchange (Demo)" />
+  <meta property="og:description" content="A simulated order book and buy/sell ticket. Demo data only, no real money." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23830c4f'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='%23ffffff' font-family='Arial' font-weight='700'>E</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ---------- Theme (same palette as the main site) ---------- */
+    :root {
+      --bg: #12060E;
+      --bg-soft: #1B0A15;
+      --card: #240E1C;
+      --border: #43203A;
+      --text: #F1F5F9;
+      --muted: #BCA2B3;
+      --accent: #830c4f;
+      --accent-light: #E0529C;
+      --up: #22C55E;
+      --down: #FF5C5C;
+      --banner-h: 36px;
+      --nav-h: 64px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5; padding-top: var(--banner-h);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    :focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; border-radius: 4px; }
+    .container { width: min(1180px, 94%); margin-inline: auto; }
+    .up { color: var(--up); } .down { color: var(--down); }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* Demo banner */
+    .demo-banner {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--banner-h); z-index: 100;
+      background: #0A0308; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      font-size: .8rem; color: var(--muted); padding: 0 12px; text-align: center;
+    }
+    .demo-banner strong { color: #fff; background: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: .7rem; letter-spacing: .06em; }
+
+    /* Navbar */
+    .nav { position: sticky; top: var(--banner-h); z-index: 90; height: var(--nav-h); background: rgba(18,6,14,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+    .nav .container { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; }
+    .logo-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; }
+    .logo .fx { color: var(--accent-light); }
+    .nav ul { display: flex; gap: 24px; list-style: none; }
+    .nav ul a { color: var(--muted); font-weight: 500; transition: color .2s; }
+    .nav ul a:hover, .nav ul a[aria-current="page"] { color: var(--text); }
+    .nav ul a[aria-current="page"] { border-bottom: 2px solid var(--accent-light); padding-bottom: 4px; }
+    .logo, .nav ul a { white-space: nowrap; }
+    @media (max-width: 560px) {
+      :root { --banner-h: 54px; }                       /* room for the banner text to wrap */
+      .nav ul { gap: 16px; font-size: .9rem; }
+      .nav ul li:nth-child(2), .nav ul li:nth-child(4) { display: none; }  /* keep Home + Live Exchange */
+    }
+
+    /* Page head */
+    .head { padding: 28px 0 16px; display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; justify-content: space-between; }
+    .head h1 { font-size: clamp(1.5rem, 3.4vw, 2.1rem); line-height: 1.2; }
+    .head p { color: var(--muted); font-size: .95rem; max-width: 560px; }
+    .pairbar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+    select, input {
+      padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-soft); color: var(--text); width: 100%;
+    }
+    select:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
+    .pairbar select { width: auto; font-weight: 700; }
+    .lastprice { font-size: 1.6rem; font-weight: 800; }
+    .balances { color: var(--muted); font-size: .85rem; }
+    .balances b { color: var(--text); font-weight: 600; }
+
+    /* Layout */
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+    .layout-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 20px; }
+    @media (max-width: 900px) { .layout, .layout-2 { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+    .panel h2 { font-size: 1rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .panel h2 small { color: var(--muted); font-weight: 500; font-size: .75rem; }
+
+    /* Order book */
+    .book-head, .row { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; padding: 4px 8px; font-size: .85rem; }
+    .book-head { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+    .book-head span:nth-child(n+2), .row span:nth-child(n+2) { text-align: right; }
+    .row { position: relative; border-radius: 4px; }
+    .row.ask { background: linear-gradient(to left, rgba(255,92,92,.16) var(--d, 0%), transparent var(--d, 0%)); }
+    .row.bid { background: linear-gradient(to left, rgba(34,197,94,.16) var(--d, 0%), transparent var(--d, 0%)); }
+    .row.ask span:first-child { color: var(--down); font-weight: 600; }
+    .row.bid span:first-child { color: var(--up); font-weight: 600; }
+    .row.mine { box-shadow: inset 0 0 0 1px var(--accent-light); }
+    .mid { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 8px; margin: 6px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .mid .p { font-size: 1.25rem; font-weight: 800; }
+    .mid .s { color: var(--muted); font-size: .78rem; }
+
+    /* Order ticket */
+    .side-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg-soft); border-radius: 12px; padding: 4px; margin-bottom: 14px; }
+    .side-toggle button { border: 0; border-radius: 9px; padding: 10px; font-weight: 700; cursor: pointer; background: transparent; color: var(--muted); }
+    .side-toggle button[aria-pressed="true"].buy { background: var(--up); color: #04210F; }
+    .side-toggle button[aria-pressed="true"].sell { background: var(--down); color: #2B0505; }
+    .field { margin-bottom: 12px; }
+    .field label { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-bottom: 4px; }
+    .field .suffix { position: relative; }
+    .field .suffix input { padding-right: 56px; }
+    .field .suffix span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .8rem; pointer-events: none; }
+    .pcts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: -2px 0 12px; }
+    .pcts button { background: var(--bg-soft); color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 6px 0; font-size: .78rem; cursor: pointer; }
+    .pcts button:hover { color: var(--text); border-color: var(--accent-light); }
+    .summary { background: var(--bg-soft); border-radius: 12px; padding: 12px; font-size: .85rem; margin-bottom: 14px; }
+    .summary div { display: flex; justify-content: space-between; padding: 2px 0; }
+    .summary div span:first-child { color: var(--muted); }
+    .submit { width: 100%; border: 0; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 1rem; cursor: pointer; }
+    .submit.buy { background: var(--up); color: #04210F; }
+    .submit.sell { background: var(--down); color: #2B0505; }
+    .submit:hover { filter: brightness(1.08); }
+    .msg { margin-top: 12px; font-size: .85rem; min-height: 1.3em; }
+    .msg.ok { color: var(--up); } .msg.err { color: var(--down); }
+    .fine { color: var(--muted); font-size: .72rem; margin-top: 10px; }
+    .link-btn { background: none; border: 0; color: var(--accent-light); cursor: pointer; text-decoration: underline; font-size: .78rem; padding: 0; }
+
+    /* Tables / lists */
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tabs button { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 6px 14px; font-size: .82rem; cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .scroll { overflow: auto; max-height: 300px; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 440px; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; position: sticky; top: 0; background: var(--card); }
+    td.r, th.r { text-align: right; }
+    .empty { color: var(--muted); font-size: .88rem; padding: 18px 4px; }
+    .cancel { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 3px 10px; cursor: pointer; font-size: .75rem; }
+    .cancel:hover { color: var(--down); border-color: var(--down); }
+    .trades .row { grid-template-columns: 1fr 1fr 1fr; }
+    .trades .row span:first-child { font-weight: 600; }
+    .trades .row span:last-child { color: var(--muted); }
+
+    footer { border-top: 1px solid var(--border); padding: 32px 0; margin-top: 40px; background: #0C040A; }
+    .disclaimer { color: var(--muted); font-size: .8rem; }
+    .sr-only { position: absolute; left: -9999px; }
+  </style>
+</head>
+<body>
+
+  <div class="demo-banner" role="note">
+    <strong>DEMO</strong>
+    <span>Simulated market and paper money. No real orders are placed. Not financial advice.</span>
+  </div>
+
+  <header class="nav">
+    <div class="container">
+      <a href="index.html" class="logo" aria-label="Enarya FX home">
+        <div class="logo-mark">E</div><div>Enarya <span class="fx">FX</span></div>
+      </a>
+      <nav aria-label="Main">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#rates">Rates</a></li>
+          <li><a href="exchange.html" aria-current="page">Live Exchange</a></li>
+          <li><a href="index.html#learn">Learn</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="head">
+      <div>
+        <h1>Live Exchange</h1>
+        <p>A mockup of a live trading screen. Prices, order book and trades are generated in your browser to show how a market looks. Practice with paper money.</p>
+      </div>
+      <div class="pairbar">
+        <label class="sr-only" for="pair">Currency pair</label>
+        <select id="pair"></select>
+        <div class="lastprice num" id="lastPrice" aria-live="off">–</div>
+      </div>
+    </div>
+    <p class="balances" id="balances" style="margin-bottom:16px"></p>
+
+    <div class="layout">
+      <!-- ========== ORDER BOOK ========== -->
+      <section class="panel" aria-labelledby="bookTitle">
+        <h2 id="bookTitle">Order book <small id="bookUnits">–</small></h2>
+        <div class="book-head"><span>Price</span><span>Size</span><span>Cumulative</span></div>
+        <div id="asks" aria-label="Sell orders (asks)"></div>
+        <div class="mid"><span class="p num" id="midPrice">–</span><span class="s num" id="spread">–</span></div>
+        <div id="bids" aria-label="Buy orders (bids)"></div>
+        <p class="fine">Red rows are sell orders (asks). Green rows are buy orders (bids). Your own open limit orders are outlined.</p>
+      </section>
+
+      <!-- ========== ORDER TICKET ========== -->
+      <section class="panel" aria-labelledby="ticketTitle">
+        <h2 id="ticketTitle">Place an order <small>Paper money</small></h2>
+        <div class="side-toggle" role="group" aria-label="Order side">
+          <button type="button" class="buy" id="sideBuy" aria-pressed="true">Buy</button>
+          <button type="button" class="sell" id="sideSell" aria-pressed="false">Sell</button>
+        </div>
+
+        <div class="field">
+          <label for="otype">Order type</label>
+          <select id="otype">
+            <option value="market">Market (fill now at best prices)</option>
+            <option value="limit">Limit (wait for your price)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="oprice">Price <span id="priceHint"></span></label>
+          <div class="suffix"><input id="oprice" type="number" step="any" min="0" inputmode="decimal" /><span id="priceCcy"></span></div>
+        </div>
+        <div class="field">
+          <label for="oamount">Amount <span id="availHint"></span></label>
+          <div class="suffix"><input id="oamount" type="number" step="any" min="0" inputmode="decimal" placeholder="0" /><span id="amountCcy"></span></div>
+        </div>
+        <div class="pcts" role="group" aria-label="Fill amount from available balance">
+          <button type="button" data-pct="0.25">25%</button><button type="button" data-pct="0.5">50%</button>
+          <button type="button" data-pct="0.75">75%</button><button type="button" data-pct="1">100%</button>
+        </div>
+
+        <div class="summary">
+          <div><span>Estimated total</span><span class="num" id="sumTotal">–</span></div>
+          <div><span>Fee</span><span>0 (demo)</span></div>
+        </div>
+
+        <button type="button" class="submit buy" id="submitBtn">Buy</button>
+        <div class="msg" id="msg" role="status" aria-live="polite"></div>
+        <p class="fine">Starting balances are fake. <button type="button" class="link-btn" id="resetBtn">Reset demo account</button></p>
+      </section>
+    </div>
+
+    <div class="layout-2">
+      <section class="panel trades" aria-labelledby="tradesTitle">
+        <h2 id="tradesTitle">Market trades <small>simulated</small></h2>
+        <div class="book-head"><span>Price</span><span>Size</span><span>Time</span></div>
+        <div id="trades"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="ordersTitle">
+        <h2 id="ordersTitle">My orders</h2>
+        <div class="tabs" role="tablist" aria-label="My orders">
+          <button type="button" role="tab" id="tabOpen" aria-selected="true">Open</button>
+          <button type="button" role="tab" id="tabHist" aria-selected="false">History</button>
+        </div>
+        <div class="scroll" id="ordersWrap"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p class="disclaimer">Enarya FX provides information for educational purposes only and is not financial advice. This Live Exchange page is a simulation with generated data and paper money: no real trading takes place. Forex trading carries a high level of risk.</p>
+    </div>
+  </footer>
+
+  <script>
+  /* =====================================================================
+     ENARYA FX | Live Exchange (DEMO)
+     Everything here is simulated in the browser: prices, the order book,
+     other traders' fills and your paper-money account. Nothing is sent to
+     any server. To make it real you would replace the simulator with a
+     WebSocket feed and a trading backend.
+     ===================================================================== */
+
+  /* ---------- Markets ---------- */
+  // start: starting mid price | tick: price step between book levels | avg: typical level size (base currency)
+  const MARKETS = {
+    'EUR/USD': { base: 'EUR', quote: 'USD', start: 1.0850, dp: 5, tick: 0.0001,   avg: 25000,   spreadTicks: 1 },
+    'GBP/USD': { base: 'GBP', quote: 'USD', start: 1.2950, dp: 5, tick: 0.0001,   avg: 20000,   spreadTicks: 1 },
+    'USD/JPY': { base: 'USD', quote: 'JPY', start: 150.20, dp: 3, tick: 0.01,     avg: 25000,   spreadTicks: 1 },
+    'ETB/USD': { base: 'ETB', quote: 'USD', start: 0.0063, dp: 6, tick: 0.000002, avg: 4000000, spreadTicks: 2 },
+  };
+  const LEVELS = 10;
+  const START_BALANCES = { USD: 10000, EUR: 10000, GBP: 8000, JPY: 1500000, ETB: 1500000 };
+  const STORE_KEY = 'enaryafx_demo_v1';
+
+  /* ---------- State ---------- */
+  let current = 'EUR/USD';
+  let side = 'buy';
+  let ordersTab = 'open';
+  let account = { balances: { ...START_BALANCES }, orders: [], nextId: 1 };
+
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const fmt = (n, dp) => n.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  const fmtSize = (n) => n >= 1000 ? Math.round(n).toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const $ = (id) => document.getElementById(id);
+
+  // Persist the paper account (wrapped: storage can be unavailable)
+  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(account)); } catch (e) { /* ignore */ } }
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      const a = JSON.parse(raw);
+      if (a && a.balances && Array.isArray(a.orders)) account = { balances: { ...START_BALANCES, ...a.balances }, orders: a.orders, nextId: a.nextId || 1 };
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ---------- Market simulator ---------- */
+  function initMarket(key) {
+    const m = MARKETS[key];
+    m.mid = m.start;
+    m.lastDir = 0;
+    m.askBase = Array.from({ length: LEVELS }, () => m.avg * rnd(0.4, 2.0));
+    m.bidBase = Array.from({ length: LEVELS }, () => m.avg * rnd(0.4, 2.0));
+    m.trades = [];
+    buildBook(m);
+  }
+
+  function buildBook(m) {
+    const half = (m.tick * m.spreadTicks) / 2;
+    m.asks = []; m.bids = [];
+    for (let i = 0; i < LEVELS; i++) {
+      m.asks.push({ p: m.mid + half + i * m.tick, s: m.askBase[i] * rnd(0.85, 1.15) });
+      m.bids.push({ p: m.mid - half - i * m.tick, s: m.bidBase[i] * rnd(0.85, 1.15) });
+    }
+  }
+
+  function stepMarket(key) {
+    const m = MARKETS[key];
+    const prev = m.mid;
+    // small random walk that gently reverts to the start price
+    m.mid += rnd(-1, 1) * m.tick * 1.5 + (m.start - m.mid) * 0.02;
+    m.lastDir = m.mid > prev ? 1 : m.mid < prev ? -1 : m.lastDir;
+    buildBook(m);
+    // someone else trades
+    if (Math.random() < 0.8) {
+      const buy = Math.random() < 0.5;
+      m.trades.unshift({ p: buy ? m.asks[0].p : m.bids[0].p, s: m.avg * rnd(0.02, 0.4), buy, t: new Date() });
+      if (m.trades.length > 14) m.trades.pop();
+    }
+  }
+
+  /* ---------- Account helpers ---------- */
+  // Funds already promised to open limit orders
+  function locked(ccy) {
+    let sum = 0;
+    for (const o of account.orders) {
+      if (o.status !== 'open') continue;
+      const m = MARKETS[o.pair];
+      if (o.side === 'buy' && m.quote === ccy) sum += o.amount * o.price;
+      if (o.side === 'sell' && m.base === ccy) sum += o.amount;
+    }
+    return sum;
+  }
+  const available = (ccy) => Math.max(0, (account.balances[ccy] || 0) - locked(ccy));
+
+  // Walk the book to see what an order would cost / pay
+  function walk(levels, amount) {
+    let left = amount, total = 0;
+    for (const l of levels) {
+      const take = Math.min(left, l.s);
+      total += take * l.p; left -= take;
+      if (left <= 1e-9) break;
+    }
+    return left > 1e-9 ? null : { total, avg: total / amount };
+  }
+
+  function settle(o, price) {
+    const m = MARKETS[o.pair];
+    const total = o.amount * price;
+    if (o.side === 'buy') { account.balances[m.quote] -= total; account.balances[m.base] = (account.balances[m.base] || 0) + o.amount; }
+    else { account.balances[m.base] -= o.amount; account.balances[m.quote] = (account.balances[m.quote] || 0) + total; }
+    o.status = 'filled'; o.fillPrice = price; o.closedAt = Date.now();
+  }
+
+  // Limit orders fill when the market reaches them
+  function matchOpenOrders() {
+    let changed = false;
+    for (const o of account.orders) {
+      if (o.status !== 'open') continue;
+      const m = MARKETS[o.pair];
+      // Fill at the market price that reached the order (never worse than your limit)
+      if (o.side === 'buy' && m.asks[0].p <= o.price) { settle(o, m.asks[0].p); changed = true; }
+      if (o.side === 'sell' && m.bids[0].p >= o.price) { settle(o, m.bids[0].p); changed = true; }
+    }
+    if (changed) { save(); renderAll(); flash('A limit order was filled.', 'ok'); }
+  }
+
+  /* ---------- Rendering ---------- */
+  function renderBook() {
+    const m = MARKETS[current];
+    const maxCum = Math.max(m.asks.reduce((a, l) => a + l.s, 0), m.bids.reduce((a, l) => a + l.s, 0));
+    const mine = new Set(account.orders.filter(o => o.status === 'open' && o.pair === current).map(o => o.price));
+    const nearMine = (p) => { for (const x of mine) if (Math.abs(x - p) < m.tick / 2) return true; return false; };
+
+    // Cumulative size is counted outward from the best price on each side
+    const build = (levels, cls) => {
+      let cum = 0;
+      return levels.map(l => {
+        cum += l.s;
+        return `<div class="row ${cls} ${nearMine(l.p) ? 'mine' : ''}" style="--d:${(cum / maxCum * 100).toFixed(1)}%"><span class="num">${fmt(l.p, m.dp)}</span><span class="num">${fmtSize(l.s)}</span><span class="num">${fmtSize(cum)}</span></div>`;
+      });
+    };
+    // asks are shown highest at the top so the best ask sits next to the mid price
+    $('asks').innerHTML = build(m.asks, 'ask').reverse().join('');
+    $('bids').innerHTML = build(m.bids, 'bid').join('');
+    $('midPrice').textContent = fmt(m.mid, m.dp);
+    $('midPrice').className = 'p num ' + (m.lastDir > 0 ? 'up' : m.lastDir < 0 ? 'down' : '');
+    $('lastPrice').textContent = fmt(m.mid, m.dp);
+    $('lastPrice').className = 'lastprice num ' + (m.lastDir > 0 ? 'up' : m.lastDir < 0 ? 'down' : '');
+    $('spread').textContent = 'Spread ' + fmt(m.asks[0].p - m.bids[0].p, m.dp);
+    $('bookUnits').textContent = `Size in ${m.base}, price in ${m.quote}`;
+  }
+
+  function renderTrades() {
+    const m = MARKETS[current];
+    $('trades').innerHTML = m.trades.map(t =>
+      `<div class="row"><span class="num ${t.buy ? 'up' : 'down'}">${fmt(t.p, m.dp)}</span><span class="num">${fmtSize(t.s)}</span><span class="num">${t.t.toLocaleTimeString()}</span></div>`).join('')
+      || '<p class="empty">Waiting for trades…</p>';
+  }
+
+  function renderBalances() {
+    const m = MARKETS[current];
+    const show = (c) => `<b>${fmt(available(c), c === 'JPY' || c === 'ETB' ? 0 : 2)} ${c}</b>`;
+    $('balances').innerHTML = `Paper balance (available): ${show(m.base)} · ${show(m.quote)}`;
+  }
+
+  function renderOrders() {
+    const wrap = $('ordersWrap');
+    const list = account.orders.filter(o => ordersTab === 'open' ? o.status === 'open' : o.status !== 'open').sort((a, b) => b.id - a.id);
+    if (!list.length) { wrap.innerHTML = `<p class="empty">${ordersTab === 'open' ? 'No open orders. Place a limit order away from the market price to see it here.' : 'No order history yet.'}</p>`; return; }
+    const rows = list.map(o => {
+      const m = MARKETS[o.pair];
+      const price = o.status === 'filled' ? o.fillPrice : o.price;
+      const last = ordersTab === 'open'
+        ? `<td class="r"><button type="button" class="cancel" data-cancel="${o.id}" aria-label="Cancel order ${o.id}">Cancel</button></td>`
+        : `<td class="r">${o.status}</td>`;
+      return `<tr><td>${o.pair}</td><td class="${o.side === 'buy' ? 'up' : 'down'}">${o.side} ${o.type}</td><td class="r num">${fmt(price, m.dp)}</td><td class="r num">${fmtSize(o.amount)} ${m.base}</td>${last}</tr>`;
+    }).join('');
+    wrap.innerHTML = `<table><thead><tr><th>Pair</th><th>Side</th><th class="r">Price</th><th class="r">Amount</th><th class="r">${ordersTab === 'open' ? '' : 'Status'}</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderTicket() {
+    const m = MARKETS[current];
+    const isLimit = $('otype').value === 'limit';
+    $('oprice').disabled = !isLimit;
+    $('priceCcy').textContent = m.quote;
+    $('amountCcy').textContent = m.base;
+    $('priceHint').textContent = isLimit ? '' : '(market)';
+    if (!isLimit) $('oprice').value = fmt(side === 'buy' ? m.asks[0].p : m.bids[0].p, m.dp).replace(/,/g, '');
+    const avail = side === 'buy' ? available(m.quote) : available(m.base);
+    $('availHint').textContent = `Available: ${fmtSize(avail)} ${side === 'buy' ? m.quote : m.base}`;
+    $('submitBtn').className = 'submit ' + side;
+    $('submitBtn').textContent = `${side === 'buy' ? 'Buy' : 'Sell'} ${m.base}`;
+    $('sideBuy').setAttribute('aria-pressed', side === 'buy');
+    $('sideSell').setAttribute('aria-pressed', side === 'sell');
+    updateTotal();
+  }
+
+  function updateTotal() {
+    const m = MARKETS[current];
+    const amount = parseFloat($('oamount').value) || 0;
+    let price = parseFloat($('oprice').value) || 0;
+    if ($('otype').value === 'market' && amount > 0) {
+      const w = walk(side === 'buy' ? m.asks : m.bids, amount);
+      $('sumTotal').textContent = w ? `${fmt(w.total, m.dp > 4 ? 4 : 2)} ${m.quote} (avg ${fmt(w.avg, m.dp)})` : 'Not enough liquidity';
+      return;
+    }
+    $('sumTotal').textContent = amount > 0 && price > 0 ? `${fmt(amount * price, m.dp > 4 ? 4 : 2)} ${m.quote}` : '–';
+  }
+
+  function renderAll() { renderBook(); renderTrades(); renderBalances(); renderOrders(); renderTicket(); }
+
+  function flash(text, kind) {
+    const el = $('msg');
+    el.textContent = text; el.className = 'msg ' + (kind || '');
+  }
+
+  /* ---------- Placing orders ---------- */
+  function submitOrder() {
+    const m = MARKETS[current];
+    const type = $('otype').value;
+    const amount = parseFloat($('oamount').value);
+    if (!(amount > 0)) return flash('Enter an amount greater than zero.', 'err');
+
+    const order = { id: account.nextId, pair: current, side, type, amount, status: 'open', ts: Date.now() };
+
+    if (type === 'market') {
+      const w = walk(side === 'buy' ? m.asks : m.bids, amount);
+      if (!w) return flash('Not enough liquidity in the book for that size. Try a smaller amount.', 'err');
+      if (side === 'buy' && w.total > available(m.quote) + 1e-9) return flash(`Not enough ${m.quote}. You need ${fmt(w.total, 2)}.`, 'err');
+      if (side === 'sell' && amount > available(m.base) + 1e-9) return flash(`Not enough ${m.base} to sell.`, 'err');
+      order.price = w.avg;
+      account.nextId++; account.orders.push(order);
+      settle(order, w.avg);
+      m.trades.unshift({ p: w.avg, s: amount, buy: side === 'buy', t: new Date() });
+      flash(`${side === 'buy' ? 'Bought' : 'Sold'} ${fmtSize(amount)} ${m.base} at an average ${fmt(w.avg, m.dp)}.`, 'ok');
+    } else {
+      const price = parseFloat($('oprice').value);
+      if (!(price > 0)) return flash('Enter a limit price.', 'err');
+      if (side === 'buy' && amount * price > available(m.quote) + 1e-9) return flash(`Not enough ${m.quote} for this order.`, 'err');
+      if (side === 'sell' && amount > available(m.base) + 1e-9) return flash(`Not enough ${m.base} to sell.`, 'err');
+      order.price = price;
+      account.nextId++; account.orders.push(order);
+      // A limit order that already crosses the book fills straight away at the best market
+      // price, which is never worse than your limit (simplified: one price, no depth walk).
+      const crosses = side === 'buy' ? m.asks[0].p <= price : m.bids[0].p >= price;
+      if (crosses) {
+        const px = side === 'buy' ? m.asks[0].p : m.bids[0].p;
+        settle(order, px);
+        flash(`Limit order filled at ${fmt(px, m.dp)}, the best available price.`, 'ok');
+      }
+      else flash(`Limit ${side} order placed at ${fmt(price, m.dp)}. It fills if the market reaches it.`, 'ok');
+    }
+    $('oamount').value = '';
+    save(); renderAll();
+  }
+
+  /* ---------- Events ---------- */
+  function setSide(s) { side = s; renderTicket(); }
+  $('sideBuy').addEventListener('click', () => setSide('buy'));
+  $('sideSell').addEventListener('click', () => setSide('sell'));
+  $('otype').addEventListener('change', () => { const m = MARKETS[current]; if ($('otype').value === 'limit') $('oprice').value = fmt(m.mid, m.dp).replace(/,/g, ''); renderTicket(); });
+  ['oprice', 'oamount'].forEach(id => $(id).addEventListener('input', updateTotal));
+  $('submitBtn').addEventListener('click', submitOrder);
+
+  document.querySelectorAll('[data-pct]').forEach(b => b.addEventListener('click', () => {
+    const m = MARKETS[current];
+    const pct = parseFloat(b.dataset.pct);
+    let amount;
+    if (side === 'sell') amount = available(m.base) * pct;
+    else {
+      const price = $('otype').value === 'limit' ? (parseFloat($('oprice').value) || m.asks[0].p) : m.asks[0].p;
+      amount = (available(m.quote) / price) * pct * 0.999; // small margin for slippage
+    }
+    $('oamount').value = amount > 0 ? (amount >= 100 ? Math.floor(amount) : +amount.toFixed(4)) : '';
+    updateTotal();
+  }));
+
+  $('pair').addEventListener('change', () => { current = $('pair').value; $('oamount').value = ''; flash(''); if ($('otype').value === 'limit') $('oprice').value = fmt(MARKETS[current].mid, MARKETS[current].dp).replace(/,/g, ''); renderAll(); });
+
+  $('tabOpen').addEventListener('click', () => { ordersTab = 'open'; $('tabOpen').setAttribute('aria-selected', true); $('tabHist').setAttribute('aria-selected', false); renderOrders(); });
+  $('tabHist').addEventListener('click', () => { ordersTab = 'history'; $('tabHist').setAttribute('aria-selected', true); $('tabOpen').setAttribute('aria-selected', false); renderOrders(); });
+
+  $('ordersWrap').addEventListener('click', (e) => {
+    const id = e.target.dataset && e.target.dataset.cancel;
+    if (!id) return;
+    const o = account.orders.find(x => x.id === Number(id));
+    if (o && o.status === 'open') { o.status = 'cancelled'; o.closedAt = Date.now(); save(); renderAll(); flash('Order cancelled.', 'ok'); }
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    account = { balances: { ...START_BALANCES }, orders: [], nextId: 1 };
+    save(); renderAll(); flash('Demo account reset.', 'ok');
+  });
+
+  /* ---------- Init ---------- */
+  load();
+  Object.keys(MARKETS).forEach(initMarket);
+  $('pair').innerHTML = Object.keys(MARKETS).map(k => `<option value="${k}">${k}</option>`).join('');
+  $('pair').value = current;
+  renderAll();
+
+  // Simulated "live" updates, once per second
+  setInterval(() => {
+    Object.keys(MARKETS).forEach(stepMarket);
+    matchOpenOrders();
+    renderBook(); renderTrades(); renderBalances(); renderTicket();
+  }, 1000);
+  </script>
+</body>
+</html>
