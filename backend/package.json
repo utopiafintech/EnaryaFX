@@ -1,0 +1,10 @@
+{
+  "name": "enarya-fx-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enarya FX serverless backend (AWS SAM)",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": { "node": ">=22" }
+}

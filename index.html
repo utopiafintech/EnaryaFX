@@ -324,7 +324,23 @@
      The v2 API returns flat rows like { date, base, quote, rate } (as a JSON
      array or newline-delimited JSON), and it includes ETB.
      ===================================================================== */
+  const API_BASE = '';   // <- paste your backend ApiUrl here (no trailing slash). Empty = call Frankfurter directly.
+
+  // Tries your backend first (cached rates, no key exposure), then falls back to the public API.
   async function fetchRates() {
+    if (API_BASE) {
+      try {
+        const res = await fetch(API_BASE + '/rates');
+        if (!res.ok) throw new Error('Backend error ' + res.status);
+        const { series } = await res.json();
+        if (!Array.isArray(series) || series.length < 2) throw new Error('Backend returned no data');
+        return series;
+      } catch (err) { console.warn('Backend unavailable, using Frankfurter directly:', err); }
+    }
+    return fetchFromFrankfurter();
+  }
+
+  async function fetchFromFrankfurter() {
     const API_KEY = '';  // <- add a key here if your provider needs one
     const start = new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10);
     const quotes = CURRENCIES.filter(c => c !== 'USD').join(',');
